@@ -12,20 +12,20 @@ from ..commons.errors.access_denied_error import AccessDeniedError
 from ..commons.errors.error import Error
 from ..commons.errors.method_not_allowed_error import MethodNotAllowedError
 from ..commons.errors.unauthorized_error import UnauthorizedError
-from .types.create_score_request import CreateScoreRequest
-from .types.score import Score
+from .types.coldkey import Coldkey
+from .types.create_coldkey_request import CreateColdkeyRequest
 
 
-class ScoreClient:
+class ColdkeysClient:
     def __init__(self, *, environment: str, username: str, password: str):
         self._environment = environment
         self._username = username
         self._password = password
 
-    def create(self, *, request: CreateScoreRequest) -> Score:
+    def create_coldkey(self, *, request: CreateColdkeyRequest) -> Coldkey:
         _response = httpx.request(
             "POST",
-            urllib.parse.urljoin(f"{self._environment}/", "api/public/scores"),
+            urllib.parse.urljoin(f"{self._environment}/", "api/public/coldkeys"),
             json=jsonable_encoder(request),
             auth=(self._username, self._password)
             if self._username is not None and self._password is not None
@@ -33,7 +33,7 @@ class ScoreClient:
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Score, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Coldkey, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:
@@ -49,17 +49,17 @@ class ScoreClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
 
-class AsyncScoreClient:
+class AsyncColdkeysClient:
     def __init__(self, *, environment: str, username: str, password: str):
         self._environment = environment
         self._username = username
         self._password = password
 
-    async def create(self, *, request: CreateScoreRequest) -> Score:
+    async def create_coldkey(self, *, request: CreateColdkeyRequest) -> Coldkey:
         async with httpx.AsyncClient() as _client:
             _response = await _client.request(
                 "POST",
-                urllib.parse.urljoin(f"{self._environment}/", "api/public/scores"),
+                urllib.parse.urljoin(f"{self._environment}/", "api/public/coldkeys"),
                 json=jsonable_encoder(request),
                 auth=(self._username, self._password)
                 if self._username is not None and self._password is not None
@@ -67,7 +67,7 @@ class AsyncScoreClient:
                 timeout=60,
             )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Score, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Coldkey, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:

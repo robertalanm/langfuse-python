@@ -8,11 +8,14 @@ import pydantic
 from ....core.datetime_utils import serialize_datetime
 
 
-class CreateTraceRequest(pydantic.BaseModel):
-    name: typing.Optional[str]
-    user_id: typing.Optional[str] = pydantic.Field(alias="userId")
-    external_id: typing.Optional[str] = pydantic.Field(alias="externalId")
-    metadata: typing.Optional[typing.Any]
+class Coldkey(pydantic.BaseModel):
+    id: str
+    project_id: str = pydantic.Field(alias="projectId")
+    created_at: dt.datetime = pydantic.Field(alias="createdAt")
+    updated_at: dt.datetime = pydantic.Field(alias="updatedAt")
+    ss_58: str = pydantic.Field(alias="ss58")
+    pubfile: str
+    name: str
 
     def json(self, **kwargs: typing.Any) -> str:
         kwargs_with_defaults: typing.Any = {"by_alias": True, "exclude_unset": True, **kwargs}

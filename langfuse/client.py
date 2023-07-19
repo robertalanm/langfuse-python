@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 import uuid
+import traceback
 from langfuse import version
 from langfuse.api.resources.event.types.create_event_request import CreateEventRequest
 from langfuse.api.resources.generations.types.create_log import CreateLog
@@ -9,6 +10,8 @@ from langfuse.api.resources.span.types.create_span_request import CreateSpanRequ
 from langfuse.futures import FuturesStore
 from langfuse.api.client import AsyncFintoLangfuse
 from langfuse.api.resources.trace.types.create_trace_request import CreateTraceRequest
+from langfuse.api.resources.neurons.types import CreateNeuronsRequest
+
 from .version import __version__ as version
 
 class Langfuse:
@@ -23,11 +26,8 @@ class Langfuse:
             environment=self.base_url,
             username=public_key,
             password=secret_key,
-            x_langfuse_sdk_name='python',
-            x_langfuse_sdk_version=version,
         )
-        
-    
+
     def trace(self, body: CreateTraceRequest):
 
         new_id = str(uuid.uuid4()) if body.id is None else body.id
@@ -46,9 +46,25 @@ class Langfuse:
 
         return StatefulClient(self.client,id, StateType.OBSERVATION, future_store=self.future_store)
         
+
+    def neuron(self, body: CreateNeuronsRequest):
+        try:
+            id = str(uuid.uuid4()) if body.id is None else body.id
+            # body = body.copy(update={'id': id})
+            neuron_promise = lambda: self.client.neurons.create_neurons(request=body)
+            self.future_store.append(id, neuron_promise)
+
+            return StatefulClient(self.client, id, StateType.OBSERVATION, future_store=self.future_store)
+        except Exception as e:
+            traceback.print_exc()
+            raise e
+        
     def flush(self):
         # Flush the future store instead of executing promises directly
-        self.future_store.flush()
+        try:
+            return self.future_store.flush()
+        except Exception as e:
+            raise e
 
 
 class StateType(Enum):
@@ -146,3 +162,25 @@ class StatefulClient:
         self.future_store.append(body.id, task, future_id=self.id)
 
         return StatefulClient(self.client, self.id, self.state_type, future_store=self.future_store)
+    
+    def neuron(self, body: CreateNeuronsRequest):
+            
+        id = str(uuid.uuid4()) if body.id is None else body.id
+
+        async def task(future_result):
+            new_body = body.copy(update={'id': id})
+
+            parent = future_result
+            
+            if self.state_type == StateType.OBSERVATION:
+                new_body = new_body.copy(update={'parent_observation_id': body.parent_observation_id if body.parent_observation_id is not None else parent.id})
+                new_body = new_body.copy(update={'trace_id': body.trace_id if body.trace_id is not None else parent.trace_id})
+            else:   
+                new_body = new_body.copy(update={'trace_id': body.trace_id if body.trace_id is not None else parent.id})
+            
+            return await self.client.neurons.create_neurons(request=new_body)
+
+        # Add the task to the future store with trace_future_id as a dependency
+        self.future_store.append(id, task, future_id=self.id)
+
+        return StatefulClient(self.client, id, StateType.OBSERVATION, future_store=self.future_store)

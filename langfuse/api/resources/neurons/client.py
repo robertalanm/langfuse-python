@@ -12,21 +12,21 @@ from ..commons.errors.access_denied_error import AccessDeniedError
 from ..commons.errors.error import Error
 from ..commons.errors.method_not_allowed_error import MethodNotAllowedError
 from ..commons.errors.unauthorized_error import UnauthorizedError
-from .types.create_log import CreateLog
-from .types.log import Log
-from .types.update_generation_request import UpdateGenerationRequest
+from .types.create_neurons_request import CreateNeuronsRequest
+from .types.neurons import Neurons
+from .types.update_neurons_request import UpdateNeuronsRequest
 
 
-class GenerationsClient:
+class NeuronsClient:
     def __init__(self, *, environment: str, username: str, password: str):
         self._environment = environment
         self._username = username
         self._password = password
 
-    def log(self, *, request: CreateLog) -> Log:
+    def create_neurons(self, *, request: CreateNeuronsRequest) -> Neurons:
         _response = httpx.request(
             "POST",
-            urllib.parse.urljoin(f"{self._environment}/", "api/public/generations"),
+            urllib.parse.urljoin(f"{self._environment}/", "api/public/neurons"),
             json=jsonable_encoder(request),
             auth=(self._username, self._password)
             if self._username is not None and self._password is not None
@@ -34,7 +34,7 @@ class GenerationsClient:
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Log, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Neurons, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:
@@ -49,10 +49,10 @@ class GenerationsClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    def update(self, *, request: UpdateGenerationRequest) -> Log:
+    def update_neurons(self, *, request: UpdateNeuronsRequest) -> Neurons:
         _response = httpx.request(
             "PATCH",
-            urllib.parse.urljoin(f"{self._environment}/", "api/public/generations"),
+            urllib.parse.urljoin(f"{self._environment}/", "api/public/neurons"),
             json=jsonable_encoder(request),
             auth=(self._username, self._password)
             if self._username is not None and self._password is not None
@@ -60,7 +60,7 @@ class GenerationsClient:
             timeout=60,
         )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Log, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Neurons, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:
@@ -76,17 +76,17 @@ class GenerationsClient:
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
 
-class AsyncGenerationsClient:
+class AsyncNeuronsClient:
     def __init__(self, *, environment: str, username: str, password: str):
         self._environment = environment
         self._username = username
         self._password = password
 
-    async def log(self, *, request: CreateLog) -> Log:
+    async def create_neurons(self, *, request: CreateNeuronsRequest) -> Neurons:
         async with httpx.AsyncClient() as _client:
             _response = await _client.request(
                 "POST",
-                urllib.parse.urljoin(f"{self._environment}/", "api/public/generations"),
+                urllib.parse.urljoin(f"{self._environment}/", "api/public/neurons"),
                 json=jsonable_encoder(request),
                 auth=(self._username, self._password)
                 if self._username is not None and self._password is not None
@@ -94,7 +94,7 @@ class AsyncGenerationsClient:
                 timeout=60,
             )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Log, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Neurons, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:
@@ -109,11 +109,11 @@ class AsyncGenerationsClient:
             raise ApiError(status_code=_response.status_code, body=_response.text)
         raise ApiError(status_code=_response.status_code, body=_response_json)
 
-    async def update(self, *, request: UpdateGenerationRequest) -> Log:
+    async def update_neurons(self, *, request: UpdateNeuronsRequest) -> Neurons:
         async with httpx.AsyncClient() as _client:
             _response = await _client.request(
                 "PATCH",
-                urllib.parse.urljoin(f"{self._environment}/", "api/public/generations"),
+                urllib.parse.urljoin(f"{self._environment}/", "api/public/neurons"),
                 json=jsonable_encoder(request),
                 auth=(self._username, self._password)
                 if self._username is not None and self._password is not None
@@ -121,7 +121,7 @@ class AsyncGenerationsClient:
                 timeout=60,
             )
         if 200 <= _response.status_code < 300:
-            return pydantic.parse_obj_as(Log, _response.json())  # type: ignore
+            return pydantic.parse_obj_as(Neurons, _response.json())  # type: ignore
         if _response.status_code == 400:
             raise Error(pydantic.parse_obj_as(str, _response.json()))  # type: ignore
         if _response.status_code == 401:
